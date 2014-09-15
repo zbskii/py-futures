@@ -46,15 +46,10 @@
                                         </p>
                                 </section>
                                 <section>
-                                        <h3>I work at AppNexus</h3>
+                                        <h3>I work at</h3>
+                                        <img src="an.png" border="none" />
                                         <p>
                                           We have a lot of data.
-                                        </p>
-                                </section>
-                                <section>
-                                        <h3>Background</h3>
-                                        <p>
-                                          I mostly do backend work.  Databases, servers, DevOps, etc.
                                         </p>
                                 </section>
                                 <section>
@@ -137,7 +132,7 @@
                                         <li>5 hours to download ~600 parts</li>
                                         <li>4 hours to unzip each part</li>
                                         <li>4 hours to add an id to each line in each part part</li>
-                                        <li>Importing each part takes ~5mins * 600 50hours (!)</li>
+                                        <li>[rest of time in solr indexing]</li>
                                     </p>
                                 </section>
                                 <section>
@@ -150,7 +145,36 @@
                                       Python.
                                     </p>
                                 </section>
-
+                                <section data-transition="none" data-transition-speed="fast">
+                                        <h3>Now a QUIZ!</h3>
+                                        <p>Which of these operations are threadsafe in python?</p>
+                                        <ol>
+                                          <li class="fragment">x = y</li>
+                                          <li class="fragment">i = i+1</li>
+                                          <li class="fragment">L.append(x)</li>
+                                          <li class="fragment">L.append(L[-1])</li>
+                                          <li class="fragment">x = L[i]</li>
+                                          <li class="fragment">L[i] = L[j]</li>
+                                          <li class="fragment">D[x] = y</li>
+                                          <li class="fragment">D[x] = D[x]</li>
+                                          <li class="fragment">D1.update(D2)</li>
+                                        </ol>
+                                </section>
+                                <section data-transition="none" data-transition-speed="fast">
+                                        <h3>Now a QUIZ!</h3>
+                                        <p>Which of these operations are threadsafe in python?</p>
+                                        <ol>
+                                          <li style="color: green">x = y</li>
+                                          <li style="color: red">i = i+1</li>
+                                          <li style="color: green">L.append(x)</li>
+                                          <li style="color: red">L.append(L[-1])</li>
+                                          <li style="color: green">x = L[i]</li>
+                                          <li style="color: red">L[i] = L[j]</li>
+                                          <li style="color: green">D[x] = y</li>
+                                          <li style="color: red">D[x] = D[x] </li>
+                                          <li style="color: green">D1.update(D2)</li>
+                                        </ol>
+                                </section>
                                 <section>
                                     <h3>The Future</h3>
                                     <p>
@@ -161,36 +185,118 @@
 
                                   <section>
                                     This:
-                                    <pre> <code class="python">
+<pre><code data-trim contenteditable>
 import requests
 session = requests.Session()
 r = session.get(url, stream=True)
-                                    </code>
-                                    </pre>
+</code></pre>
                                     Becomes:
-                                    <pre> <code class="python">
+<pre><code data-trim contenteditable>
 from requests_futures import FutureSession
 session = FutureSession()
 async_downloads.append(session.get(url, stream=True))
 for f in futures.as_completed(async_downloads):
     pass
-
-                                    </code>
-                                    </pre>
+</code></pre>
                                   </section>
                                   <section>
-                                    <h3>Futures</h3>
-                                    <p>
-                                      What's a Future?  See schmichael's "History of concurrency talk"
-                                    </p>
-                                      <pre class="stretch"> <code class="python">
-from requests_futures import FutureSession
-session = FutureSession()
-async_downloads.append(session.get(url, stream=True))
-for f in futures.as_completed(async_downloads):
-    pass
-                                    </code>
-                                    </pre>
+                                    <section>
+                                      <h3>Futures</h3>
+                                      <p>
+                                        What's a Future?  See schmichael's "History of concurrency talk"
+                                      </p>
+<pre><code data-trim contenteditable>
+with ThreadPoolExecutor(max_workers=1) as executor:
+    future = executor.submit(pow, 323, 1235)
+    print(future.result())
+</code></pre>
+                                    </section>
+                                    <section>
+                                      <h3>Futures - sidebar</h3>
+                                      <p>
+                                        Futures are a concurency abstraction.
+                                      </p>
+                                      <p>
+                                        They're easy to reason about - pass some stuff, wait for a result.
+                                      </p>
+                                    </section>
+                                    <section>
+                                      <h3>Futures - sidebar</h3>
+                                      <p>
+                                        The thing is <em>details matter</em> in concurrent programming
+                                      </p>
+                                      <p>
+                                        Stuff got weird/hard
+                                      </p>
+                                    </section>
+                                    <section>
+                                      <h3>Futures - sidebar</h3>
+                                      <p>
+                                        Remember that requests_futures is just a wrapper library. It worked great on my laptop. I wanted to change a few parameters...
+                                      </p>
+<pre><code data-trim contenteditable>
+self._async_session = FuturesSession()
+for url in urls:
+    # Make sure the http connection pool is the same size as
+    # our threadpool - block if the threadpool is full
+    kwargs = {'max_retries': 3,
+              'pool_connections': async_workers,
+              'pool_maxsize': async_workers,
+              'pool_block': True}
+    self._async_session.mount('http://', HTTPAdapter(**kwargs))
+    self._async_session.mount('https://', HTTPAdapter(**kwargs))
+    self._async_session.get(url)
+</code></pre>
+                                    </section>
+                                    <section>
+                                      <h3>Futures - sidebar</h3>
+                                      <p>
+                                        Did you see the bug?
+                                      </p>
+                                      <p>
+                                        I got an exception "KeyError: 'https'".
+                                      </p>
+                                    </section>
+                                    <section>
+                                      <h3>Futures - sidebar</h3>
+                                      <p>
+                                        Neither did I. Turns out the futures package swallows your traceback - you get the errormessage, but not <em>where</em> the bug happened.
+                                      </p>
+<pre><code data-trim contenteditable>
+import workers
+
+worker = workers.ExceptionHandlingThreadPoolWorker(
+    max_workers=async_workers)
+self._async_session = FuturesSession(executor=worker)
+
+self._async_session = FuturesSession()
+</code></pre>
+                                      <p>
+                                        Grab my patch <a href="https://code.google.com/p/pythonfutures/issues/detail?id=26">here</a>.
+                                      </p>
+                                    </section>
+                                    <section>
+                                      Remember our quiz?  Dictionary update isn't threadsafe. Requests uses a dictionary. No locks.
+<pre><code data-trim contenteditable>
+self._async_session.mount('http://', HTTPAdapter(**kwargs))
+self._async_session.mount('https://', HTTPAdapter(**kwargs))
+</code></pre>
+                                      <p>and in session.mount</p>
+<pre><code>
+def mount(self, prefix, adapter):
+    """Registers a connection adapter to a prefix.
+
+    Adapters are sorted in descending order by key length."""
+
+    self.adapters[prefix] = adapter
+    keys_to_move = [k for k in self.adapters if len(k) < len(prefix)]
+
+    for key in keys_to_move:
+        self.adapters[key] = self.adapters.pop(key)
+</code></pre>
+                                      <p>Details matter.</p>
+
+                                    </section>
                                   </section>
 
                                   <section>
@@ -199,7 +305,6 @@ for f in futures.as_completed(async_downloads):
                                       <li><strike>5</strike> 1 hours to download ~600 parts</li>
                                       <li>4 hours to unzip each part</li>
                                       <li>4 hours to add an id to each line in each part part</li>
-                                      <li>Importing each part takes ~5mins * 600 50hours (!)</li>
                                     </ul>
                                   </section>
                                   <section>
@@ -214,8 +319,8 @@ for f in futures.as_completed(async_downloads):
                                       <li><strike>5</strike> ~1 hours to download ~600 parts</li>
                                       <li><strike>4</strike> ~1 hours to unzip each part and add a uuid</li>
                                       <li><strike>4 hours to add an id to each line in each part part</strike></li>
-                                      <li>Importing each part takes ~5mins * 600 50hours (!)</li>
                                     </ul>
+                                    <p>Win! 2 vs 13 hours!
                                   </section>
 
                                   <section>
@@ -228,20 +333,25 @@ for f in futures.as_completed(async_downloads):
                                     </ul>
                                   </section>
                                   <section>
-                                    <h3>What about solr?</h3>
+                                    <h3>What about the 50hr solr load?</h3>
                                     <p>
                                       Well... that's another talk :)
                                     </p>
                                   </section>
                                   <section>
-                                    <h3>Shameless plug</h3>
                                     <p>
                                     We're hiring!
                                     </p>
                                     <img src="an.png" border="none" />
                                     <p>bcarter@appnexus.com</p>
                                   </section>
-
+                                  <section>
+                                    <p>
+                                      Thanks! + Questions?
+                                    </p>
+                                    <p>bcarter@appnexus.com</p>
+                                    <p>github.com/zbskii/py-futures</a>
+                                  </section>
                         </div>
 
                 </div>
